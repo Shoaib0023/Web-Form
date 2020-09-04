@@ -25,6 +25,15 @@ class SignalSerializer(serializers.ModelSerializer):
             'updated_at',
         )
 
+        read_only = (
+            'category_level_name1',
+            'category_level_name2',
+            'category_level_name3',
+            'category_level_name4',
+            'created_at',
+            'updated_at',
+        )
+
 
 class AttachmentSerializer(serializers.ModelSerializer):
     class Meta:
