@@ -41,5 +41,6 @@ class AttachmentSerializer(serializers.ModelSerializer):
         fields = (
             '_signal',
             'file',
+            'seda_signal_id',
             'created_at',
        )

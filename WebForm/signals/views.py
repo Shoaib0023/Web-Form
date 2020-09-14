@@ -23,6 +23,7 @@ def attachment(request, pk):
     if request.method == "POST":
         attachment = Attachment()
         attachment._signal = signal
+        attachment.seda_signal_id = request.POST['seda_signal_id']
         attachment.file = request.FILES['file']
         attachment.save()
         serializer = AttachmentSerializer(attachment)
