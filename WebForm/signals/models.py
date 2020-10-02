@@ -57,7 +57,11 @@ class Signal(models.Model):
 
     def save(self, *args, **kwargs):
         # s = (''.join(random.choice(string.ascii_uppercase) for x in range(3))).upper()
-        kenmark = ''.join(random.choice(string.digits) for x in range(3)) + ''.join(random.choice(string.ascii_uppercase) for x in range(3))
+        while True:
+            kenmark = ''.join(random.choice(string.digits) for x in range(3)) + ''.join(random.choice(string.ascii_uppercase) for x in range(3))
+            if not Signal.objects.filter(kenmark=kenmark).exists():
+                break
+
         self.kenmark = kenmark
         super(Signal, self).save(*args, **kwargs)
 
@@ -71,6 +75,8 @@ def publish_signal_data(sender, instance, **kwargs):
     category_level_name2 = "Afvalbakken"
     category_level_name3 = "Afvalbak"
     category_level_name4 = "Vol"
+
+    # print(instance.)
 
     coordinates = instance.coordinates
     address = instance.address
@@ -107,7 +113,8 @@ def publish_signal_data(sender, instance, **kwargs):
         "category":{"category_url": category_url},
         "reporter":{"phone":instance.phone, "email": instance.email, "sharing_allowed":True},
         "incident_date_start": str(instance.created_at),
-        "text": instance.text
+        "text": instance.text,
+        "source": "WebForm"
     }
     data = json.dumps(payload, indent=4, sort_keys=True, default=str)
 
