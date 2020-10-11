@@ -11,6 +11,10 @@ import strgen
 import string
 import random 
 from django.utils.text import slugify
+import base64
+from urllib.parse import urlparse 
+from os.path import splitext
+import uuid
 
 
 PRIORITY_LOW = 'low'
@@ -26,7 +30,7 @@ MAX_LENGTH = 6
 
 class Signal(models.Model):
     kenmark = models.SlugField(editable=False, default='', max_length=MAX_LENGTH)
-    text = models.CharField(max_length=255)
+    text = models.CharField(max_length=1200)
 
     # ? Location data
     address = models.CharField(max_length=255, null=True, blank=True)
@@ -41,6 +45,9 @@ class Signal(models.Model):
 
     # ? Attachment
     file = models.FileField(upload_to='attachments/%Y/%m/%d/', null=True, blank=True, max_length=255)
+    file1 = models.FileField(upload_to='attachments/%Y/%m/%d/', null=True, blank=True)
+    file2 = models.FileField(upload_to='attachments/%Y/%m/%d/', null=True, blank=True)
+    file3 = models.FileField(upload_to='attachments/%Y/%m/%d/', null=True, blank=True)
 
     # ? Priority data
     priority = models.CharField(max_length=255, choices=PRIORITY_CHOICES, default=PRIORITY_NORMAL)
@@ -56,7 +63,7 @@ class Signal(models.Model):
         return f"{self.id} - {self.text}"
 
     def save(self, *args, **kwargs):
-        # s = (''.join(random.choice(string.ascii_uppercase) for x in range(3))).upper()
+        # s = (''.join(random.choice(string.ascii_uppercase) for x in range(3))).upper(
         while True:
             kenmark = ''.join(random.choice(string.digits) for x in range(3)) + ''.join(random.choice(string.ascii_uppercase) for x in range(3))
             if not Signal.objects.filter(kenmark=kenmark).exists():
@@ -69,7 +76,7 @@ class Signal(models.Model):
 
 # ? Publish signal data to queue
 def publish_signal_data(sender, instance, **kwargs):
-    HOST = 'http://localhost:2222'
+    HOST = 'http://ec2-52-200-189-81.compute-1.amazonaws.com:8001'
     SEDA_HOST = 'http://ec2-52-200-189-81.compute-1.amazonaws.com:8000'
     category_level_name1 = "Afval"
     category_level_name2 = "Afvalbakken"
@@ -98,6 +105,13 @@ def publish_signal_data(sender, instance, **kwargs):
         category_level_name2 = response.json()["Subcategorie1"]
         category_level_name3 = response.json()["Subcategorie2"]
         category_level_name4 = response.json()["Subcategorie3"]
+
+        if category_level_name1 == "Afval" and category_level_name2 == "Grofvuil" and category_level_name3 == "Niet Opgehaald":
+            category_level_name1 = "Other"
+            category_level_name2 = "Other"
+            category_level_name3 = "Other"
+            category_level_name4 = "Geen"
+
     except:
         print("Not worked !!!")
 
@@ -107,7 +121,7 @@ def publish_signal_data(sender, instance, **kwargs):
     else:
         category_url = f"{SEDA_HOST}/signals/v1/public/terms/categories/{category_level_name1}/{category_level_name2}/{category_level_name3}"
 
-    print(category_url)
+    #print(category_url)
     payload = {
         "location": location,
         "category":{"category_url": category_url},
@@ -119,19 +133,36 @@ def publish_signal_data(sender, instance, **kwargs):
     data = json.dumps(payload, indent=4, sort_keys=True, default=str)
 
     response = requests.post(f"{SEDA_HOST}/signals/v1/public/signals/", json=payload)
-    print(response.status_code)
-    # print(response.json())
 
     if response.status_code == 201:
+        print("Signals Created in SEDA -- ", response.status_code)
         if instance.file:
             url = f'{HOST}{instance.file.url}'
-            img = urllib.urlopen(url)
+            #print("Image url - ", url)
+            path = urlparse(url).path
+            ext = splitext(path)[1]
+            print("Ext : ", ext)
 
-            data = {
-                "signal_id": response.json()["signal_id"]
-            }
-            res = requests.post(f'{SEDA_HOST}/signals/signal/image/', files={'image': img.read()}, data=data)
+            img = urllib.urlopen(url)
+            imgHeaders = img.headers
+            print(imgHeaders)
+
+            name = str(uuid.uuid4()) + ext
+            seda_id = response.json()["signal_id"]
+
+            files = {'file': (name, img.read(), img.headers["Content-Type"])}
+
+            res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
+
             print("Image : ", res.status_code)
-            # print(res.json())
+            #print(res.json())
+
+        data = {
+            "webform_kenmark": instance.kenmark
+        }
+
+        seda_id = response.json()["signal_id"]
+        response = requests.put(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}', json=data)
+        print(response.status_code) 
 
 post_save.connect(publish_signal_data, sender=Signal)

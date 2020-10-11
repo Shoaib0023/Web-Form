@@ -62,10 +62,10 @@ DATABASES = {
     'default' : {
         'ENGINE': 'djongo',
         'CLIENT': {
-            "name": "Signals",
-            "host": "mongodb+srv://Shoaib0023:00011122@cluster0.zpshz.mongodb.net/Signals?retryWrites=true&w=majority",
-            "username": "Shoaib0023",
-            "password": "00011122",
+            "name": "webForm-db",
+            "host": "mongodb://signals:insecure@localhost:27017/webForm-db",
+            "username": "signals",
+            "password": "insecure",
             "authMechanism": "SCRAM-SHA-1"
         }
     }
@@ -94,16 +94,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+LANGUAGE_CODE = 'nl-NL'
+TIME_ZONE = 'Europe/Amsterdam'
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
+DATETIME_FORMAT = 'l d-m-Y, H:i'  # e.g. "Donderdag 06-09-2018, 13:56"
 
 
 # Static files (CSS, JavaScript, Images)
