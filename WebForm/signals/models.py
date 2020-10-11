@@ -150,7 +150,7 @@ def publish_signal_data(sender, instance, **kwargs):
             seda_id = response.json()["signal_id"]
             files = {'file': (name, img.read(), img.headers["Content-Type"])}
             res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
-            print("Image : ", res.status_code)
+            print("Image1 : ", res.status_code)
 
 
         if instance.file2:
@@ -167,7 +167,7 @@ def publish_signal_data(sender, instance, **kwargs):
             seda_id = response.json()["signal_id"]
             files = {'file': (name, img.read(), img.headers["Content-Type"])}
             res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
-            print("Image : ", res.status_code)
+            print("Image2 : ", res.status_code)
 
         
         if instance.file3:
@@ -182,7 +182,7 @@ def publish_signal_data(sender, instance, **kwargs):
 
             files = {'file': (name, img.read(), img.headers["Content-Type"])}
             res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
-            print("Image : ", res.status_code)
+            print("Image3 : ", res.status_code)
 
 
         data = {
