@@ -33,7 +33,7 @@ class Signal(models.Model):
     text = models.CharField(max_length=1200)
 
     # ? Location data
-    address = models.CharField(max_length=255, null=True, blank=True)
+    address = models.CharField(max_length=1000, null=True, blank=True)
     coordinates = models.CharField(max_length=255, null=True, blank=True)
 
     # ? Status data
@@ -136,26 +136,54 @@ def publish_signal_data(sender, instance, **kwargs):
 
     if response.status_code == 201:
         print("Signals Created in SEDA -- ", response.status_code)
-        if instance.file:
-            url = f'{HOST}{instance.file.url}'
-            #print("Image url - ", url)
+        if instance.file1:
+            url = f'{HOST}{instance.file1.url}'
             path = urlparse(url).path
             ext = splitext(path)[1]
-            print("Ext : ", ext)
+            # print("Ext : ", ext)
 
             img = urllib.urlopen(url)
             imgHeaders = img.headers
-            print(imgHeaders)
+            # print(imgHeaders)
+
+            name = str(uuid.uuid4()) + ext
+            seda_id = response.json()["signal_id"]
+            files = {'file': (name, img.read(), img.headers["Content-Type"])}
+            res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
+            print("Image : ", res.status_code)
+
+
+        if instance.file2:
+            url = f'{HOST}{instance.file2.url}'
+            path = urlparse(url).path
+            ext = splitext(path)[1]
+            # print("Ext : ", ext)
+
+            img = urllib.urlopen(url)
+            imgHeaders = img.headers
+            # print(imgHeaders)
+
+            name = str(uuid.uuid4()) + ext
+            seda_id = response.json()["signal_id"]
+            files = {'file': (name, img.read(), img.headers["Content-Type"])}
+            res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
+            print("Image : ", res.status_code)
+
+        
+        if instance.file3:
+            url = f'{HOST}{instance.file3.url}'
+            path = urlparse(url).path
+            ext = splitext(path)[1]
+            img = urllib.urlopen(url)
+            imgHeaders = img.headers
 
             name = str(uuid.uuid4()) + ext
             seda_id = response.json()["signal_id"]
 
             files = {'file': (name, img.read(), img.headers["Content-Type"])}
-
             res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
-
             print("Image : ", res.status_code)
-            #print(res.json())
+
 
         data = {
             "webform_kenmark": instance.kenmark

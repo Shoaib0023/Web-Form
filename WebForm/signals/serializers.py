@@ -20,6 +20,9 @@ class SignalSerializer(serializers.ModelSerializer):
             'kenmark',
             'created_at',
             'updated_at',
+            'file1',
+            'file2',
+            'file3',
         )
 
         read_only = (

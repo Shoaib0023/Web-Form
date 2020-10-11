@@ -27,13 +27,18 @@ class SignalViewSet(viewsets.ModelViewSet):
 
 
     def create(self, request):
-        if "file" in  request.data : 
-            file = request.data["file"]
-            format, imgstr = file.split(';base64,') 
-            ext = format.split('/')[-1]
-            img = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-            # print(img)
-            request.data["file"] = img
+        if "images" in request.data:
+            images = request.data["images"]
+            endpoint = min(3, len(request.data["images"]))
+
+            for i in range(0, endpoint):
+                image = images[i]
+                format, imgstr = image.split(';base64,')
+                ext = format.split('/')[-1]
+                img = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+                name = "file" + str(i+1)
+                request.data[name] = img
+
 
         serializer = SignalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
