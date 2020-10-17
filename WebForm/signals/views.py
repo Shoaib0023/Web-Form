@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import base64
 from django.core.files.base import ContentFile
-
+import json
 
 # Create your views here.
 class SignalViewSet(viewsets.ModelViewSet):
@@ -28,8 +28,12 @@ class SignalViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         if "images" in request.data:
+            #if type(request.data["images"]) == str:
+                #images = json.loads(request.data["images")
             images = request.data["images"]
+            print(len(images))
             endpoint = min(3, len(request.data["images"]))
+            print("Endpoint : ", endpoint)
 
             for i in range(0, endpoint):
                 image = images[i]
@@ -39,6 +43,12 @@ class SignalViewSet(viewsets.ModelViewSet):
                 name = "file" + str(i+1)
                 request.data[name] = img
 
+        if "file" in request.data:
+            file = request.data["file"]
+            format, imgstr = file.split(';base64,') 
+            ext = format.split('/')[-1]
+            img = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+            request.data["file"] = img
 
         serializer = SignalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

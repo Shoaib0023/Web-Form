@@ -30,7 +30,7 @@ MAX_LENGTH = 6
 
 class Signal(models.Model):
     kenmark = models.SlugField(editable=False, default='', max_length=MAX_LENGTH)
-    text = models.CharField(max_length=1200)
+    text = models.CharField(max_length=1000)
 
     # ? Location data
     address = models.CharField(max_length=1000, null=True, blank=True)
@@ -89,18 +89,38 @@ def publish_signal_data(sender, instance, **kwargs):
     address = instance.address
     coordinates = json.loads(instance.coordinates)
     address = json.loads(instance.address)
-    location = {
-        "geometrie" : {"type":"Point","coordinates": coordinates},
-        "address" : address
-        }
+ 
+    postcode = address["postcode"]
+    print("PostCode ", postcode)
+
+    res = requests.get(f'http://ec2-52-200-189-81.compute-1.amazonaws.com:8000/signals/v1/private/get_stadsdeel/{postcode}')
+    print("Stadsdeel api response code : ", res.status_code)
+    if res.status_code == 200:
+        stadsdeel = res.json()["stadsdeel"]["name"]
+    else:
+        stadsdeel = ""
+
+    print("Stadsdeel : ", stadsdeel)
+
+    if stadsdeel != '':
+        location = {
+             "geometrie" : {"type":"Point","coordinates": coordinates},
+             "address" : address,
+             "stadsdeel": stadsdeel
+         }
+    else:
+        location = {
+             "geometrie" : {"type":"Point","coordinates": coordinates},
+             "address" : address
+         }
 
     try:
         data = {
             "text" : instance.text
         }
         response = requests.post('http://52.200.189.81:2000/text_analytics_json', json=data)
-        print(response.status_code)
-        print(response.json())
+        #print(response.status_code)
+        #print(response.json())
         category_level_name1 = response.json()["Hoofdcategorie"]
         category_level_name2 = response.json()["Subcategorie1"]
         category_level_name3 = response.json()["Subcategorie2"]
@@ -121,21 +141,41 @@ def publish_signal_data(sender, instance, **kwargs):
     else:
         category_url = f"{SEDA_HOST}/signals/v1/public/terms/categories/{category_level_name1}/{category_level_name2}/{category_level_name3}"
 
-    #print(category_url)
+    print(category_url)
     payload = {
         "location": location,
         "category":{"category_url": category_url},
         "reporter":{"phone":instance.phone, "email": instance.email, "sharing_allowed":True},
         "incident_date_start": str(instance.created_at),
         "text": instance.text,
-        "source": "WebForm"
+        "source": "Melding Doen"
     }
     data = json.dumps(payload, indent=4, sort_keys=True, default=str)
+    #print("Data : ", data)
 
     response = requests.post(f"{SEDA_HOST}/signals/v1/public/signals/", json=payload)
+    print(response.status_code)
+    print(response.json())
 
     if response.status_code == 201:
         print("Signals Created in SEDA -- ", response.status_code)
+
+        if instance.file:
+            url = f'{HOST}{instance.file.url}'
+            path = urlparse(url).path
+            ext = splitext(path)[1]
+            # print("Ext : ", ext)
+
+            img = urllib.urlopen(url)
+            imgHeaders = img.headers
+            # print(imgHeaders)
+
+            name = str(uuid.uuid4()) + ext
+            seda_id = response.json()["signal_id"]
+            files = {'file': (name, img.read(), img.headers["Content-Type"])}
+            res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
+            print("Image : ", res.status_code)
+
         if instance.file1:
             url = f'{HOST}{instance.file1.url}'
             path = urlparse(url).path
@@ -169,7 +209,7 @@ def publish_signal_data(sender, instance, **kwargs):
             res = requests.post(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}/attachments', files=files)
             print("Image2 : ", res.status_code)
 
-        
+
         if instance.file3:
             url = f'{HOST}{instance.file3.url}'
             path = urlparse(url).path
@@ -191,6 +231,7 @@ def publish_signal_data(sender, instance, **kwargs):
 
         seda_id = response.json()["signal_id"]
         response = requests.put(f'{SEDA_HOST}/signals/v1/public/signals/{seda_id}', json=data)
-        print(response.status_code) 
+        print(response.status_code)
+        print("-------------------------------------------") 
 
 post_save.connect(publish_signal_data, sender=Signal)
