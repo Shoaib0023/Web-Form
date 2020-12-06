@@ -9,7 +9,7 @@ SECRET_KEY = 'kv2ischvghz-st=13_-=1d=8ffpjsb_pi*9n%agi)k8w*g+70)'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ec2-52-200-189-81.compute-1.amazonaws.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ec2-52-200-189-81.compute-1.amazonaws.com', '3.126.254.35']
 APPEND_SLASH=False
 # Application definition
 

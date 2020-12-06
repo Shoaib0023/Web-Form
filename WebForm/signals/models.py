@@ -76,14 +76,12 @@ class Signal(models.Model):
 
 # ? Publish signal data to queue
 def publish_signal_data(sender, instance, **kwargs):
-    HOST = 'http://ec2-52-200-189-81.compute-1.amazonaws.com:8001'
-    SEDA_HOST = 'http://ec2-52-200-189-81.compute-1.amazonaws.com:8000'
+    HOST = 'http://3.126.254.35:8001'
+    SEDA_HOST = 'http://3.126.254.35:8000'
     category_level_name1 = "Afval"
     category_level_name2 = "Afvalbakken"
     category_level_name3 = "Afvalbak"
     category_level_name4 = "Vol"
-
-    # print(instance.)
 
     coordinates = instance.coordinates
     address = instance.address
@@ -91,9 +89,16 @@ def publish_signal_data(sender, instance, **kwargs):
     address = json.loads(instance.address)
  
     postcode = address["postcode"]
+    postcode = ''.join(postcode.split())
     print("PostCode ", postcode)
 
-    res = requests.get(f'http://ec2-52-200-189-81.compute-1.amazonaws.com:8000/signals/v1/private/get_stadsdeel/{postcode}')
+    if "huisnummer" in address:
+        huisnummer = address["huisnummer"]
+        payload = {"postcode": postcode, "huisnummer": huisnummer}
+    else:
+        payload = {"postcode": postcode}
+
+    res = requests.post(f'{SEDA_HOST}/signals/v1/private/get_stadsdeel', data=payload)
     print("Stadsdeel api response code : ", res.status_code)
     if res.status_code == 200:
         stadsdeel = res.json()["stadsdeel"]["name"]

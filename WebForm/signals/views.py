@@ -11,7 +11,7 @@ import json
 # Create your views here.
 class SignalViewSet(viewsets.ModelViewSet):
     serializer_class = SignalSerializer
-    queryset = Signal.objects.all().order_by('-created_by')
+    queryset = Signal.objects.all().order_by('-created_at')
     lookup_field = 'id'
 
     def list(self, *args, **kwargs):
